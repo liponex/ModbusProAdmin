@@ -1,13 +1,13 @@
-package main
+package modbus
 
 import (
 	"testing"
 )
 
 func TestModbusPack(t *testing.T) {
-	proto := mbPacketProto{
+	proto := MbPacketProto{
 		0x01,
-		mbPacketData{
+		MbPacketData{
 			0x03,
 			0x0001,
 			0x0001,
@@ -30,9 +30,9 @@ func TestModbusPack(t *testing.T) {
 }
 
 func TestModbusCrc(t *testing.T) {
-	proto := mbPacketProto{
+	proto := MbPacketProto{
 		0x01,
-		mbPacketData{
+		MbPacketData{
 			0x03,
 			0x0001,
 			0x0001,
@@ -42,17 +42,17 @@ func TestModbusCrc(t *testing.T) {
 		0xFFFF,
 		[]uint8{0x01, 0x03, 0x00, 0x01, 0x00, 0x01},
 	}
-	proto.CRC16Calculate()
+	proto.CRC16()
 	var want uint16 = 0xD5CA
-	if want != proto.crc {
-		t.Fatal("proto.crc = ", proto.crc, ", want match for ", want)
+	if want != proto.Crc {
+		t.Fatal("proto.crc = ", proto.Crc, ", want match for ", want)
 	}
 }
 
 func TestModbusReadOne(t *testing.T) {
-	proto := mbPacketProto{
+	proto := MbPacketProto{
 		0x01,
-		mbPacketData{
+		MbPacketData{
 			0x03,
 			0x0001,
 			0x0001,
@@ -63,7 +63,7 @@ func TestModbusReadOne(t *testing.T) {
 		[]uint8{},
 	}
 	proto.Pack()
-	proto.CRC16Calculate()
+	proto.CRC16()
 
 	want := []uint8{0x01, 0x03, 0x00, 0x01, 0x00, 0x01, 0xD5, 0xCA}
 	if len(want) != len(proto.PacketBuffer) {
@@ -77,9 +77,9 @@ func TestModbusReadOne(t *testing.T) {
 }
 
 func TestModbusWriteMany(t *testing.T) {
-	proto := mbPacketProto{
+	proto := MbPacketProto{
 		0x01,
-		mbPacketData{
+		MbPacketData{
 			0x10,
 			0x0002,
 			0x0003,
@@ -90,7 +90,7 @@ func TestModbusWriteMany(t *testing.T) {
 		[]uint8{},
 	}
 	proto.Pack()
-	proto.CRC16Calculate()
+	proto.CRC16()
 
 	want := []uint8{0x01, 0x10, 0x00, 0x02, 0x00, 0x03, 0x06, 0x00, 0x0B, 0x00, 0x0C, 0x00, 0x0D, 0xE3, 0x4D}
 	if len(want) != len(proto.PacketBuffer) {
