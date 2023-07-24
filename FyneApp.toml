@@ -1,0 +1,8 @@
+Website = "https://liponex.ru"
+
+[Details]
+Icon = "Icon.png"
+Name = "Modbus Pro Admin"
+ID = "ru.liponex.modbus-pro-admin"
+Version = "1.0.0"
+Build = 1
