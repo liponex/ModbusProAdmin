@@ -14,29 +14,19 @@
  * along with this program.  If not, see <https://www.gnu.licenses/>.
  */
 
-package gui
+package layout
 
-import (
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
-	xLayout "fyne.io/x/fyne/layout"
-)
+import "fyne.io/fyne/v2"
 
-var (
-	clientTabContainer = container.NewVBox()
-	clientTabItem      = container.NewTabItem(
-		"Client",
-		clientTabContainer,
-	)
-)
+type responsibleHDistributed struct{}
 
-func client() *container.TabItem {
+func (resHD *responsibleHDistributed) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	w, h := float32(0), float32(0)
+	for _, o := range objects {
+		childSize := o.MinSize()
 
-	clientTabContainer.Add(xLayout.NewResponsiveLayout(
-		serialSelector(),
-		widget.NewLabel("123"),
-		widget.NewLabel("123"),
-	))
-
-	return clientTabItem
+		w += childSize.Width
+		h += childSize.Height
+	}
+	return fyne.NewSize(w, h)
 }

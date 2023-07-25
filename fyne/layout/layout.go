@@ -14,29 +14,4 @@
  * along with this program.  If not, see <https://www.gnu.licenses/>.
  */
 
-package gui
-
-import (
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
-	xLayout "fyne.io/x/fyne/layout"
-)
-
-var (
-	clientTabContainer = container.NewVBox()
-	clientTabItem      = container.NewTabItem(
-		"Client",
-		clientTabContainer,
-	)
-)
-
-func client() *container.TabItem {
-
-	clientTabContainer.Add(xLayout.NewResponsiveLayout(
-		serialSelector(),
-		widget.NewLabel("123"),
-		widget.NewLabel("123"),
-	))
-
-	return clientTabItem
-}
+package layout

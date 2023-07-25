@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	fyne.io/fyne/v2 v2.3.5
+	fyne.io/x/fyne v0.0.0-20230717140956-ad10f343f15e
 	github.com/sigurn/crc16 v0.0.0-20211026045750-20ab5afb07e3
 	go.bug.st/serial v1.5.0
 )

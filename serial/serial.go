@@ -22,24 +22,52 @@ import (
 	"go.bug.st/serial"
 )
 
-type SerialProto struct {
+type Serial interface {
+	Opener
+	Closer
+	Writer
+	Reader
+}
+
+type Opener interface {
+	Open() Proto
+}
+
+type Closer interface {
+	Close()
+}
+
+type Writer interface {
+	Write() Data
+}
+
+type Reader interface {
+	Read() Data
+}
+
+type Proto struct {
 	port serial.Port
 	mode *serial.Mode
 }
 
-func SerialOpen(serialPort string, mode *serial.Mode) SerialProto {
-	port, err := serial.Open(serialPort, mode)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return SerialProto{
-		port: port,
-		mode: mode,
-	}
+type Data struct {
+	currentData []byte
 }
 
-func GetSerialPorts() []string {
+func Open(serialPort string, mode *serial.Mode) (Proto, error) {
+	port, err := serial.Open(serialPort, mode)
+
+	return Proto{
+		port: port,
+		mode: mode,
+	}, err
+}
+
+func (proto *Proto) Close() error {
+	return proto.port.Close()
+}
+
+func GetPorts() []string {
 	ports, err := serial.GetPortsList()
 	if err != nil {
 		log.Fatal(err)

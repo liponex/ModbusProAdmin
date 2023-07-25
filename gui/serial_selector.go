@@ -27,24 +27,31 @@ import (
 )
 
 func serialSelector() *fyne.Container {
-	var serialPorts = serial.GetSerialPorts()
+	var serialPorts = serial.GetPorts()
 
 	labelSerialPort := widget.NewLabel("Serial port:")
 	selectSerialPort := widget.NewSelect(
 		serialPorts,
 		func(port string) {
-			if len(serialPorts) > 0 {
-				fmt.Printf("%v\t", port)
-				// SerialOpen(port, serialMode)
-			} else {
+			if len(serialPorts) == 0 {
+				return
 			}
+			if port == "Disconnect" {
+				return
+			}
+
+			fmt.Printf("%v\t", port)
+			// SerialOpen(port, serialMode)
 		},
 	)
 	selectSerialPort.PlaceHolder = "(Select port)"
 	buttonUpdate := widget.NewButtonWithIcon("", theme.ViewRefreshIcon(), func() {
-		serialPorts = serial.GetSerialPorts()
+		serialPorts = serial.GetPorts()
 		if len(serialPorts) > 0 {
-			selectSerialPort.Options = serialPorts
+			selectSerialPort.Options = append(
+				[]string{"Disconnect"},
+				serialPorts...,
+			)
 		} else {
 			selectSerialPort.Options = []string{"No ports available"}
 		}
