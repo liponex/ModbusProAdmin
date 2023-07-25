@@ -14,27 +14,23 @@
  * along with this program.  If not, see <https://www.gnu.licenses/>.
  */
 
-package main
+package gui
 
 import (
-	"log"
-
-	"go.bug.st/serial"
+	"fyne.io/fyne/v2/container"
 )
 
-type SerialProto struct {
-	port serial.Port
-	mode *serial.Mode
-}
+var (
+	clientTabContainer = container.NewVBox()
+	clientTabItem      = container.NewTabItem(
+		"Client",
+		clientTabContainer,
+	)
+)
 
-func SerialOpen(serialPort string, mode *serial.Mode) SerialProto {
-	port, err := serial.Open(serialPort, mode)
-	if err != nil {
-		log.Fatal(err)
-	}
+func client() *container.TabItem {
 
-	return SerialProto{
-		port: port,
-		mode: mode,
-	}
+	clientTabContainer.Add(serialSelector())
+
+	return clientTabItem
 }

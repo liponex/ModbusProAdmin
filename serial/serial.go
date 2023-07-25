@@ -14,38 +14,36 @@
  * along with this program.  If not, see <https://www.gnu.licenses/>.
  */
 
-package main
+package serial
 
 import (
-	"modbus-pro-admin/gui"
-	"modbus-pro-admin/modbus"
+	"log"
 
-	"fyne.io/fyne/v2/data/binding"
 	"go.bug.st/serial"
 )
 
-var (
-	PortsBinding = binding.BindStringList(
-		&[]string{},
-	)
-	SerialMode = &serial.Mode{
-		BaudRate: 9600,
-	}
-)
+type SerialProto struct {
+	port serial.Port
+	mode *serial.Mode
+}
 
-func main() {
-	data := modbus.MbPacketProto{
-		SlaveAddr: 0x01,
-		Data: modbus.MbPacketData{
-			Function:   0x03,
-			RegAddr:    0x0001,
-			RegsAmount: 0x0001,
-			DataAmount: 0x00,
-		},
+func SerialOpen(serialPort string, mode *serial.Mode) SerialProto {
+	port, err := serial.Open(serialPort, mode)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	data.Pack()
-	data.CRC16()
+	return SerialProto{
+		port: port,
+		mode: mode,
+	}
+}
 
-	gui.Gui()
+func GetSerialPorts() []string {
+	ports, err := serial.GetPortsList()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return ports
 }
