@@ -27,7 +27,10 @@ import (
 )
 
 func serialSelector() *fyne.Container {
-	var serialPorts = serial.GetPorts()
+	var serialPorts = append(
+		[]string{"Disconnect"},
+		serial.GetPorts()...,
+	)
 
 	labelSerialPort := widget.NewLabel("Serial port:")
 	selectSerialPort := widget.NewSelect(

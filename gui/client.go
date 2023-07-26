@@ -19,7 +19,7 @@ package gui
 import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	xLayout "fyne.io/x/fyne/layout"
+	xLayout "modbus-pro-admin/fyne/layout"
 )
 
 var (
@@ -32,10 +32,11 @@ var (
 
 func client() *container.TabItem {
 
-	clientTabContainer.Add(xLayout.NewResponsiveLayout(
+	clientTabContainer.Add(xLayout.NewResponsibleHDistributedLayout(
+		3,
 		serialSelector(),
 		widget.NewLabel("123"),
-		widget.NewLabel("123"),
+		widget.NewLabel("456"),
 	))
 
 	return clientTabItem
