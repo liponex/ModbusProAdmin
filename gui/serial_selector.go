@@ -17,34 +17,77 @@
 package gui
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"modbus-pro-admin/serial"
+
+	serialLib "go.bug.st/serial"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	xWidget "modbus-pro-admin/fyne/widget"
+)
+
+var (
+	OpenSerials []serial.Proto
 )
 
 func serialSelector() *fyne.Container {
-	var serialPorts = append(
-		[]string{"Disconnect"},
-		serial.GetPorts()...,
+	var (
+		serialPorts = append(
+			[]string{"Disconnect"},
+			serial.GetPorts()...,
+		)
+		serialMode = &serialLib.Mode{
+			BaudRate: 9600,
+		}
 	)
 
 	labelSerialPort := widget.NewLabel("Serial port:")
-	selectSerialPort := widget.NewSelect(
+	selectSerialPort := xWidget.NewSelectWithPrevLink[serial.Proto](
 		serialPorts,
-		func(port string) {
+		func(hasPrev *bool, prevSelected *serial.Proto, new string) {
 			if len(serialPorts) == 0 {
 				return
 			}
-			if port == "Disconnect" {
+			if new == "Disconnect" {
+				if !*hasPrev {
+					return
+				}
+				go func(port serial.Proto) {
+					fmt.Println("Port", port.String(), "closing")
+					var err = errors.New("")
+					for err != nil {
+						err = port.Close()
+					}
+					fmt.Println("Port", port.String(), "closed")
+				}(*prevSelected)
+				*hasPrev = false
 				return
 			}
 
-			fmt.Printf("%v\t", port)
-			// SerialOpen(port, serialMode)
+			fmt.Println(new)
+			proto, err := serial.Open(new, serialMode)
+			if err != nil {
+				log.Fatal("Can't open serial new", new)
+			}
+			if !*hasPrev {
+				*prevSelected = proto
+				*hasPrev = true
+				return
+			}
+			go func(port serial.Proto) {
+				fmt.Println("Port", port.String(), "closing")
+				var err = errors.New("")
+				for err != nil {
+					err = port.Close()
+				}
+				fmt.Println("Port", port.String(), "closed")
+			}(*prevSelected)
+			*prevSelected = proto
 		},
 	)
 	selectSerialPort.PlaceHolder = "(Select port)"

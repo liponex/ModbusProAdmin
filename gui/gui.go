@@ -18,10 +18,10 @@ package gui
 
 import (
 	"fmt"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"log"
 )
 
 func Gui() {
@@ -53,7 +53,12 @@ func Gui() {
 	w.SetMainMenu(mainMenu)
 	w.SetCloseIntercept(
 		func() {
-			//TODO: Close serial ports on close
+			for _, port := range OpenSerials {
+				err := port.Close()
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
 			w.Close()
 		})
 

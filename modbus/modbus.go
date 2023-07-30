@@ -60,13 +60,12 @@ func (proto *MbPacketProto) Pack() {
 func (proto *MbPacketProto) CRC16() uint16 {
 	table := crc16.MakeTable(crc16.CRC16_MODBUS)
 	var crc = crc16.Checksum(proto.PacketBuffer, table)
-	tmp_crc := (crc << 8) + (crc >> 8)
 
-	proto.Crc = tmp_crc
+	proto.Crc = (crc << 8) + (crc >> 8)
 	proto.PacketBuffer = append(proto.PacketBuffer, byte(proto.Crc>>8), byte(proto.Crc&0xFF))
-	return tmp_crc
+	return proto.Crc
 }
 
-func (proto MbPacketProto) Send() {
+func (proto *MbPacketProto) Send() {
 
 }

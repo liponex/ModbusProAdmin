@@ -30,41 +30,83 @@ type Serial interface {
 }
 
 type Opener interface {
-	Open() Proto
+	Open() (Proto, error)
 }
 
 type Closer interface {
-	Close()
+	Close() error
 }
 
 type Writer interface {
-	Write() Data
+	Write()
 }
 
 type Reader interface {
-	Read() Data
+	Read()
 }
 
 type Proto struct {
-	port serial.Port
-	mode *serial.Mode
-}
-
-type Data struct {
-	currentData []byte
+	port         serial.Port
+	portStr      string
+	mode         *serial.Mode
+	listeners    []func(proto *Proto)
+	status       string
+	inputBuffer  []byte
+	outputBuffer []byte
 }
 
 func Open(serialPort string, mode *serial.Mode) (Proto, error) {
 	port, err := serial.Open(serialPort, mode)
 
-	return Proto{
-		port: port,
-		mode: mode,
-	}, err
+	proto := Proto{
+		port:    port,
+		portStr: serialPort,
+		mode:    mode,
+	}
+
+	if err == nil {
+		proto.status = "opened"
+		go proto.runListeners()
+	}
+
+	return proto, err
 }
 
 func (proto *Proto) Close() error {
-	return proto.port.Close()
+	err := proto.port.Close()
+	if err == nil {
+		proto.status = "closed"
+	}
+	return err
+}
+
+func (proto *Proto) Read() int {
+	err := proto.port.ResetInputBuffer()
+	if err != nil {
+		log.Fatal(err)
+	}
+	n, err := proto.port.Read(proto.inputBuffer)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return n
+}
+
+func (proto *Proto) AddListener(listener func(proto *Proto)) {
+	proto.listeners = append(proto.listeners, listener)
+}
+
+func (proto *Proto) runListeners() {
+	for proto.status != "closed" {
+		if proto.inputBuffer != nil && len(proto.inputBuffer) > 0 {
+			for _, listener := range proto.listeners {
+				listener(proto)
+			}
+		}
+	}
+}
+func (proto *Proto) String() string {
+	return proto.portStr
 }
 
 func GetPorts() []string {

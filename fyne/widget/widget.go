@@ -14,37 +14,4 @@
  * along with this program.  If not, see <https://www.gnu.licenses/>.
  */
 
-package main
-
-import (
-	"modbus-pro-admin/gui"
-	"modbus-pro-admin/modbus"
-
-	"fyne.io/fyne/v2/data/binding"
-)
-
-var (
-	PortsBinding = binding.BindStringList(
-		&[]string{},
-	)
-)
-
-func main() {
-	data := modbus.MbPacketProto{
-		SlaveAddr: 0x01,
-		Data: modbus.MbPacketData{
-			Function:   0x03,
-			RegAddr:    0x0000,
-			RegsAmount: 0x0001,
-			DataAmount: 0x01,
-			DataBuf: []uint16{
-				0x000F,
-			},
-		},
-	}
-
-	data.Pack()
-	data.CRC16()
-
-	gui.Gui()
-}
+package widget

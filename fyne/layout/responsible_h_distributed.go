@@ -57,7 +57,7 @@ func (resHD *responsibleHDistributed) MinSize(objects []fyne.CanvasObject) fyne.
 		if w < childSize.Width {
 			w = childSize.Width
 		}
-		h += childSize.Height
+		h += childSize.Height * 2
 	}
 	return fyne.NewSize(w, h)
 }
@@ -67,12 +67,7 @@ func (resHD *responsibleHDistributed) Layout(objects []fyne.CanvasObject, contai
 		return
 	}
 
-	canvas := fyne.CurrentApp().Driver().CanvasForObject(objects[0])
-	if canvas == nil {
-		return
-	}
-
-	canvasWidth := canvas.Size().Width - theme.Padding()
+	canvasWidth := containerSize.Width - theme.Padding()
 
 	rows := layoutRowSlice{}
 	rows.addRow()
@@ -109,7 +104,7 @@ func (resHD *responsibleHDistributed) Layout(objects []fyne.CanvasObject, contai
 		if len(row.items) < 1 {
 			return
 		}
-		splitSize := canvas.Size().Width / float32(len(row.items)-1)
+		splitSize := containerSize.Width / float32(len(row.items)-1)
 		row.items[0].Move(prevPos)
 		for j := 1; j < len(row.items)-1; j++ {
 			row.items[j].Move(
