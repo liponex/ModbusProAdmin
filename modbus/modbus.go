@@ -61,11 +61,24 @@ func (proto *MbPacketProto) CRC16() uint16 {
 	table := crc16.MakeTable(crc16.CRC16_MODBUS)
 	var crc = crc16.Checksum(proto.PacketBuffer, table)
 
-	proto.Crc = (crc << 8) + (crc >> 8)
-	proto.PacketBuffer = append(proto.PacketBuffer, byte(proto.Crc>>8), byte(proto.Crc&0xFF))
+	if proto.Crc == 0 {
+		proto.Crc = (crc << 8) + (crc >> 8)
+		proto.PacketBuffer = append(proto.PacketBuffer, byte(proto.Crc>>8), byte(proto.Crc&0xFF))
+	} else {
+		proto.Crc = (crc << 8) + (crc >> 8)
+		proto.PacketBuffer[len(proto.PacketBuffer)-2] = byte(proto.Crc >> 8)
+		proto.PacketBuffer[len(proto.PacketBuffer)-1] = byte(proto.Crc & 0xFF)
+	}
 	return proto.Crc
 }
 
 func (proto *MbPacketProto) Send() {
 
+}
+
+func (proto *MbPacketProto) Validate() bool {
+	proto.Crc = (uint16(proto.PacketBuffer[len(proto.PacketBuffer)-2]) << 8) + uint16(proto.PacketBuffer[len(proto.PacketBuffer)-1])
+	bufCrc := proto.Crc
+	trueCrc := proto.CRC16()
+	return bufCrc == trueCrc
 }

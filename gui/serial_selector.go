@@ -24,11 +24,12 @@ import (
 
 	serialLib "go.bug.st/serial"
 
+	xWidget "modbus-pro-admin/fyne/widget"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	xWidget "modbus-pro-admin/fyne/widget"
 )
 
 var (
@@ -43,6 +44,7 @@ func serialSelector() *fyne.Container {
 		)
 		serialMode = &serialLib.Mode{
 			BaudRate: 9600,
+			DataBits: 8,
 		}
 	)
 
@@ -53,12 +55,14 @@ func serialSelector() *fyne.Container {
 			if len(serialPorts) == 0 {
 				return
 			}
+			if new == prevSelected.String() {
+				return
+			}
 			if new == "Disconnect" {
 				if !*hasPrev {
 					return
 				}
 				go func(port serial.Proto) {
-					fmt.Println("Port", port.String(), "closing")
 					var err = errors.New("")
 					for err != nil {
 						err = port.Close()
@@ -72,15 +76,18 @@ func serialSelector() *fyne.Container {
 			fmt.Println(new)
 			proto, err := serial.Open(new, serialMode)
 			if err != nil {
-				log.Fatal("Can't open serial new", new)
+				log.Fatal("Can't open serial new ", new)
 			}
+
+			proto.AddListener(func(proto *serial.Proto) {
+				fmt.Println(proto.InputBuffer)
+			})
 			if !*hasPrev {
 				*prevSelected = proto
 				*hasPrev = true
 				return
 			}
 			go func(port serial.Proto) {
-				fmt.Println("Port", port.String(), "closing")
 				var err = errors.New("")
 				for err != nil {
 					err = port.Close()

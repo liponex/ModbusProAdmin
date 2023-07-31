@@ -17,6 +17,8 @@
 package serial
 
 import (
+	"bufio"
+	"fmt"
 	"log"
 
 	"go.bug.st/serial"
@@ -51,8 +53,8 @@ type Proto struct {
 	mode         *serial.Mode
 	listeners    []func(proto *Proto)
 	status       string
-	inputBuffer  []byte
-	outputBuffer []byte
+	InputBuffer  []byte
+	OutputBuffer []byte
 }
 
 func Open(serialPort string, mode *serial.Mode) (Proto, error) {
@@ -63,6 +65,8 @@ func Open(serialPort string, mode *serial.Mode) (Proto, error) {
 		portStr: serialPort,
 		mode:    mode,
 	}
+
+	proto.port.SetDTR(true)
 
 	if err == nil {
 		proto.status = "opened"
@@ -85,9 +89,12 @@ func (proto *Proto) Read() int {
 	if err != nil {
 		log.Fatal(err)
 	}
-	n, err := proto.port.Read(proto.inputBuffer)
+	n, err := proto.port.Read(proto.InputBuffer)
 	if err != nil {
 		log.Fatal(err)
+	}
+	if n > 0 {
+		fmt.Println(n, proto.InputBuffer)
 	}
 	return n
 }
@@ -97,8 +104,11 @@ func (proto *Proto) AddListener(listener func(proto *Proto)) {
 }
 
 func (proto *Proto) runListeners() {
+	scanner := bufio.NewScanner(proto.port)
+	scanner.Split(ScanModbus)
 	for proto.status != "closed" {
-		if proto.inputBuffer != nil && len(proto.inputBuffer) > 0 {
+		if scanner.Scan() {
+			proto.InputBuffer = scanner.Bytes()
 			for _, listener := range proto.listeners {
 				listener(proto)
 			}
