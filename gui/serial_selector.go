@@ -17,9 +17,8 @@
 package gui
 
 import (
-	"errors"
-	"fmt"
 	"log"
+	"modbus-pro-admin/modbus"
 	"modbus-pro-admin/serial"
 
 	serialLib "go.bug.st/serial"
@@ -62,39 +61,49 @@ func serialSelector() *fyne.Container {
 				if !*hasPrev {
 					return
 				}
-				go func(port serial.Proto) {
-					var err = errors.New("")
-					for err != nil {
-						err = port.Close()
-					}
-					fmt.Println("Port", port.String(), "closed")
-				}(*prevSelected)
+				prevSelected.Terminate()
 				*hasPrev = false
 				return
 			}
 
-			fmt.Println(new)
 			proto, err := serial.Open(new, serialMode)
 			if err != nil {
 				log.Fatal("Can't open serial new ", new)
 			}
 
 			proto.AddListener(func(proto *serial.Proto) {
-				fmt.Println(proto.InputBuffer)
+				flag := true
+				word := []uint8{1, 3, 0, 2, 0, 2, 101, 203}
+				i := 0
+				for i < len(proto.InputBuffer) && i < len(word) {
+					if proto.InputBuffer[i] != word[i] {
+						flag = false
+						break
+					}
+					i++
+				}
+				if flag {
+					packet := modbus.MbPacketProto{
+						//PacketBuffer: append(proto.InputBuffer, []uint8{1, 3, 2, 0, 250}...),
+						PacketBuffer: []uint8{1, 3, 2, 0, 250},
+					}
+					packet.CRC16()
+					proto.OutputBuffer = append(proto.InputBuffer, packet.PacketBuffer...)
+					err := proto.Write()
+					if err != nil {
+						log.Fatalln(err)
+					}
+				}
+				//fmt.Println(proto.InputBuffer)
 			})
+
 			if !*hasPrev {
-				*prevSelected = proto
+				prevSelected = proto
 				*hasPrev = true
 				return
 			}
-			go func(port serial.Proto) {
-				var err = errors.New("")
-				for err != nil {
-					err = port.Close()
-				}
-				fmt.Println("Port", port.String(), "closed")
-			}(*prevSelected)
-			*prevSelected = proto
+			prevSelected.Terminate()
+			prevSelected = proto
 		},
 	)
 	selectSerialPort.PlaceHolder = "(Select port)"

@@ -27,7 +27,7 @@ type MbPacketData struct {
 }
 
 type MbPacketProto struct {
-	SlaveAddr    uint8
+	Addr         uint8
 	Data         MbPacketData
 	Crc          uint16
 	PacketBuffer []uint8
@@ -35,7 +35,7 @@ type MbPacketProto struct {
 
 func (proto *MbPacketProto) Pack() {
 	proto.PacketBuffer = []uint8{
-		proto.SlaveAddr,
+		proto.Addr,
 		proto.Data.Function,
 
 		/* uint8(proto.data.regAddr & 0xFF),
@@ -86,4 +86,28 @@ func (proto *MbPacketProto) Validate() bool {
 	bufCrc := proto.Crc
 	trueCrc := proto.CRC16()
 	return bufCrc == trueCrc
+}
+
+func (proto *MbPacketProto) Parse() {
+	proto.Addr = proto.PacketBuffer[0]
+	proto.Data.Function = proto.PacketBuffer[1]
+	proto.Data.RegAddr = uint16(proto.PacketBuffer[2])<<8 + uint16(proto.PacketBuffer[3])
+	proto.Data.RegsAmount = uint16(proto.PacketBuffer[4])<<8 + uint16(proto.PacketBuffer[5])
+	if len(proto.PacketBuffer) == 8 {
+		proto.Crc = (uint16(proto.PacketBuffer[6]) << 8) + uint16(proto.PacketBuffer[7])
+		return
+	}
+	proto.Data.DataAmount = proto.PacketBuffer[6]
+	for i := 0; i < int(proto.Data.DataAmount); i++ {
+		if i+8+2 > len(proto.PacketBuffer) {
+			proto.Data.DataAmount = uint8(i - 1)
+			break
+		}
+		proto.Data.DataBuf = append(
+			proto.Data.DataBuf,
+			uint16(proto.PacketBuffer[7+i])<<8+uint16(proto.PacketBuffer[8+i]),
+		)
+	}
+
+	proto.Crc = (uint16(proto.PacketBuffer[len(proto.PacketBuffer)-2]) << 8) + uint16(len(proto.PacketBuffer)-1)
 }

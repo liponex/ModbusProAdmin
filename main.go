@@ -31,7 +31,7 @@ var (
 
 func main() {
 	data := modbus.MbPacketProto{
-		SlaveAddr: 0x01,
+		Addr: 0x01,
 		Data: modbus.MbPacketData{
 			Function:   0x03,
 			RegAddr:    0x0000,

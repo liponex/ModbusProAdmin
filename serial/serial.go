@@ -57,16 +57,20 @@ type Proto struct {
 	OutputBuffer []byte
 }
 
-func Open(serialPort string, mode *serial.Mode) (Proto, error) {
+func Open(serialPort string, mode *serial.Mode) (*Proto, error) {
 	port, err := serial.Open(serialPort, mode)
 
-	proto := Proto{
+	proto := new(Proto)
+	*proto = Proto{
 		port:    port,
 		portStr: serialPort,
 		mode:    mode,
 	}
 
-	proto.port.SetDTR(true)
+	err = proto.port.SetDTR(true)
+	if err != nil {
+		return nil, err
+	}
 
 	if err == nil {
 		proto.status = "opened"
@@ -84,6 +88,14 @@ func (proto *Proto) Close() error {
 	return err
 }
 
+func (proto *Proto) Terminate() {
+	err := proto.port.Close()
+	for err != nil {
+		err = proto.port.Close()
+	}
+	proto.status = "closed"
+}
+
 func (proto *Proto) Read() int {
 	err := proto.port.ResetInputBuffer()
 	if err != nil {
@@ -97,6 +109,20 @@ func (proto *Proto) Read() int {
 		fmt.Println(n, proto.InputBuffer)
 	}
 	return n
+}
+
+func (proto *Proto) Write() error {
+	n, err := proto.port.Write(proto.OutputBuffer)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = proto.port.ResetOutputBuffer()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(n, proto.OutputBuffer)
+	return err
 }
 
 func (proto *Proto) AddListener(listener func(proto *Proto)) {
@@ -115,6 +141,7 @@ func (proto *Proto) runListeners() {
 		}
 	}
 }
+
 func (proto *Proto) String() string {
 	return proto.portStr
 }
