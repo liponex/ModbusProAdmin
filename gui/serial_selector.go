@@ -50,25 +50,28 @@ func serialSelector() *fyne.Container {
 	labelSerialPort := widget.NewLabel("Serial port:")
 	selectSerialPort := xWidget.NewSelectWithPrevLink[serial.Proto](
 		serialPorts,
-		func(hasPrev *bool, prevSelected *serial.Proto, new string) {
+		func(hasPrev *bool, prevSelected *serial.Proto, newString string) {
 			if len(serialPorts) == 0 {
 				return
 			}
-			if new == prevSelected.String() {
+			if newString == prevSelected.String() {
 				return
 			}
-			if new == "Disconnect" {
+			if newString == "Disconnect" {
 				if !*hasPrev {
 					return
 				}
-				prevSelected.Terminate()
+				if prevSelected != nil {
+					prevSelected.Terminate()
+				}
 				*hasPrev = false
 				return
 			}
 
-			proto, err := serial.Open(new, serialMode)
+			proto := new(serial.Proto)
+			proto, err := serial.Open(newString, serialMode)
 			if err != nil {
-				log.Fatal("Can't open serial new ", new)
+				log.Fatal("Can't open serial new ", newString)
 			}
 
 			proto.AddListener(func(proto *serial.Proto) {
@@ -84,11 +87,10 @@ func serialSelector() *fyne.Container {
 				}
 				if flag {
 					packet := modbus.MbPacketProto{
-						//PacketBuffer: append(proto.InputBuffer, []uint8{1, 3, 2, 0, 250}...),
-						PacketBuffer: []uint8{1, 3, 2, 0, 250},
+						PacketBuffer: []uint8{1, 3, 4, 0, 250, 0, 150},
 					}
 					packet.CRC16()
-					proto.OutputBuffer = append(proto.InputBuffer, packet.PacketBuffer...)
+					proto.OutputBuffer = packet.PacketBuffer
 					err := proto.Write()
 					if err != nil {
 						log.Fatalln(err)
@@ -98,12 +100,12 @@ func serialSelector() *fyne.Container {
 			})
 
 			if !*hasPrev {
-				prevSelected = proto
+				*prevSelected = *proto
 				*hasPrev = true
 				return
 			}
 			prevSelected.Terminate()
-			prevSelected = proto
+			*prevSelected = *proto
 		},
 	)
 	selectSerialPort.PlaceHolder = "(Select port)"

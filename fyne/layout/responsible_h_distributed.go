@@ -57,7 +57,7 @@ func (resHD *responsibleHDistributed) MinSize(objects []fyne.CanvasObject) fyne.
 		if w < childSize.Width {
 			w = childSize.Width
 		}
-		h += childSize.Height * 2
+		h += childSize.Height
 	}
 	return fyne.NewSize(w, h)
 }

@@ -28,7 +28,7 @@ type SelectWithPrevLink[T interface{}] struct {
 }
 
 func NewSelectWithPrevLink[T interface{}](options []string, changed func(*bool, *T, string)) *SelectWithPrevLink[T] {
-	sWithPrevLink := &SelectWithPrevLink[T]{}
+	sWithPrevLink := new(SelectWithPrevLink[T])
 	sWithPrevLink.ExtendBaseWidget(sWithPrevLink)
 	sWithPrevLink.Options = options
 	sWithPrevLink.hasPrev = false
