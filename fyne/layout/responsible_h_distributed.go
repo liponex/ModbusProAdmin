@@ -49,6 +49,40 @@ func (rows *layoutRowSlice) addRow() {
 	)
 }
 
+func (rows *layoutRowSlice) splitRows(objects []fyne.CanvasObject, containerWidth float32, maxColumns uint) {
+	rows = new(layoutRowSlice)
+	rows.addRow()
+
+	rowsIter := 0
+
+	for _, o := range objects {
+		if uint(len((*rows)[rowsIter].items)) == maxColumns {
+			rowsIter++
+			rows.addRow()
+		}
+
+		size := o.MinSize()
+		o.Resize(size)
+
+		if (*rows)[rowsIter].width+size.Width > containerWidth {
+			rowsIter++
+			rows.addRow()
+		}
+
+		(*rows)[rowsIter].width += size.Width
+
+		if (*rows)[rowsIter].maxWidth < size.Width {
+			(*rows)[rowsIter].maxWidth = size.Width
+		}
+
+		if (*rows)[rowsIter].maxHeight < size.Height {
+			(*rows)[rowsIter].maxHeight = size.Height
+		}
+
+		(*rows)[rowsIter].items = append((*rows)[rowsIter].items, o)
+	}
+}
+
 func (resHD *responsibleHDistributed) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	w, h := float32(0), float32(0)
 	for _, o := range objects {
@@ -57,7 +91,11 @@ func (resHD *responsibleHDistributed) MinSize(objects []fyne.CanvasObject) fyne.
 		if w < childSize.Width {
 			w = childSize.Width
 		}
-		h += childSize.Height
+	}
+	rows := new(layoutRowSlice)
+	rows.splitRows(objects, w, resHD.maxColumns)
+	for _, row := range *rows {
+		h += row.maxHeight
 	}
 	return fyne.NewSize(w, h)
 }
