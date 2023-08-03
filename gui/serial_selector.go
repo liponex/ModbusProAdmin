@@ -35,7 +35,7 @@ var (
 	OpenSerials []serial.Proto
 )
 
-func serialSelector() *fyne.Container {
+func newSerialSelector() *fyne.Container {
 	var (
 		serialPorts = append(
 			[]string{"Disconnect"},
