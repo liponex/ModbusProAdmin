@@ -19,10 +19,12 @@ package layout
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
 )
 
 type responsibleRowDistributed struct {
 	maxColumns int
+	actualSize fyne.Size
 }
 
 type layoutRow struct {
@@ -53,6 +55,10 @@ func splitRows(objects []fyne.CanvasObject, containerWidth float32, maxColumns i
 	rowsIter := 0
 
 	for _, o := range objects {
+		if o == nil || !o.Visible() {
+			continue
+		}
+
 		if len((*rows)[rowsIter].items) == maxColumns {
 			rowsIter++
 			rows.addRow()
@@ -83,19 +89,25 @@ func splitRows(objects []fyne.CanvasObject, containerWidth float32, maxColumns i
 }
 
 func (resRD *responsibleRowDistributed) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	w, h := float32(0), float32(0)
-	for _, o := range objects {
-		childSize := o.MinSize()
-
-		if w < childSize.Width {
-			w = childSize.Width
+	minSize := fyne.NewSize(0, 0)
+	for _, child := range objects {
+		if !child.Visible() {
+			continue
 		}
+		minSize.Width = fyne.Max(minSize.Width, child.MinSize().Width)
 	}
-	rows := splitRows(objects, w, resRD.maxColumns)
+	var rows *layoutRowSlice
+	if resRD.actualSize.Width < minSize.Width {
+		rows = splitRows(objects, minSize.Width, resRD.maxColumns)
+	} else {
+		rows = splitRows(objects, resRD.actualSize.Width, resRD.maxColumns)
+	}
 	for _, row := range *rows {
-		h += row.maxHeight
+		minSize.Height += row.maxHeight
 	}
-	return fyne.NewSize(w, h)
+	minSize.Height += theme.Padding() + theme.InnerPadding()
+	minSize.Width += theme.InnerPadding()
+	return minSize
 }
 
 func (resRD *responsibleRowDistributed) Layout(objects []fyne.CanvasObject, containerSize fyne.Size) {
@@ -115,39 +127,42 @@ func (resRD *responsibleRowDistributed) Layout(objects []fyne.CanvasObject, cont
 
 		row.items[0].Move(prevPos)
 		if len(row.items) == 1 {
-			prevPos = prevPos.AddXY(0, row.maxHeight)
+			prevPos = prevPos.AddXY(0, row.maxHeight+theme.Padding())
 			continue
 		}
-		prevItemsBounds := prevPos.AddXY(row.items[0].Size().Width, 0)
+		prevItemsBounds := prevPos.AddXY(row.items[0].Size().Width+theme.Padding(), 0)
 
 		splitSize := containerSize.Width / float32(len(row.items)-1)
 		for j, item := range row.items[1 : len(row.items)-1] {
-			if prevItemsBounds.X > float32(j+1)*splitSize-(item.Size().Width/2) {
+			if prevItemsBounds.X+theme.Padding() > float32(j+1)*splitSize-(item.Size().Width/2) {
 				item.Move(prevPos.AddXY(
-					prevItemsBounds.X,
+					prevItemsBounds.X+theme.Padding(),
 					0,
 				))
-				prevItemsBounds.X += item.Size().Width
+				prevItemsBounds.X += item.Size().Width + theme.Padding()
 				continue
 			}
 			item.Move(prevPos.AddXY(
-				float32(j+1)*splitSize-(item.Size().Width/2),
+				float32(j+1)*splitSize-(item.Size().Width/2)+theme.Padding(),
 				0,
 			))
 		}
 
 		row.items[len(row.items)-1].Move(prevPos.AddXY(
-			canvasWidth-row.items[len(row.items)-1].Size().Width,
+			canvasWidth-row.items[len(row.items)-1].Size().Width+theme.Padding(),
 			0,
 		))
 
-		prevPos.Y += row.maxHeight
+		prevPos.Y += row.maxHeight + theme.Padding()
 	}
+
+	resRD.actualSize = fyne.NewSize(canvasWidth, prevPos.Y)
 }
 
-func NewResponsibleHDistributedLayout(maxColumns int, objects ...fyne.CanvasObject) *fyne.Container {
+func NewResponsibleRowDistributedLayout(maxColumns int, objects ...fyne.CanvasObject) *fyne.Container {
 	r := &responsibleRowDistributed{
 		maxColumns: maxColumns,
+		actualSize: fyne.NewSize(0, 0),
 	}
 	return container.New(r, objects...)
 }
