@@ -32,7 +32,7 @@ var (
 
 func client() *container.TabItem {
 
-	clientTabContainer.Add(xLayout.NewResponsibleHDistributedLayout(
+	clientTabContainer.Add(xLayout.NewResponsibleRowDistributedLayout(
 		3,
 		newSerialSelector(),
 		widget.NewLabel("123"),
