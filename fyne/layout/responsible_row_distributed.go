@@ -32,6 +32,7 @@ type layoutRow struct {
 	maxHeight float32
 	maxWidth  float32
 	items     []fyne.CanvasObject
+	alignment string
 }
 
 type layoutRowSlice []layoutRow
@@ -44,6 +45,7 @@ func (rows *layoutRowSlice) addRow() {
 			maxHeight: 0,
 			maxWidth:  0,
 			items:     []fyne.CanvasObject{},
+			alignment: "right",
 		},
 	)
 }
@@ -105,7 +107,7 @@ func (resRD *responsibleRowDistributed) MinSize(objects []fyne.CanvasObject) fyn
 	for _, row := range *rows {
 		minSize.Height += row.maxHeight
 	}
-	minSize.Height += theme.Padding() + theme.InnerPadding()
+	minSize.Height += theme.InnerPadding()
 	minSize.Width += theme.InnerPadding()
 	return minSize
 }
@@ -115,44 +117,29 @@ func (resRD *responsibleRowDistributed) Layout(objects []fyne.CanvasObject, cont
 		return
 	}
 
-	canvasWidth := containerSize.Width
+	canvasWidth := containerSize.Width - theme.InnerPadding()
 
 	rows := splitRows(objects, canvasWidth, resRD.maxColumns)
 
 	prevPos := fyne.NewPos(0, 0)
 	for _, row := range *rows {
-		if len(row.items) == 0 {
-			continue
+		switch row.alignment {
+		case "center":
+			row.rowItemsCenter(prevPos, canvasWidth)
+			break
+		case "left":
+			row.rowItemsLeft(prevPos, canvasWidth)
+			break
+		case "right":
+			row.rowItemsRight(prevPos, canvasWidth)
+			break
+		case "distributed":
+			row.rowItemsDistributed(prevPos, canvasWidth)
+			break
+		default:
+			row.rowItemsDistributed(prevPos, canvasWidth)
+			break
 		}
-
-		row.items[0].Move(prevPos)
-		if len(row.items) == 1 {
-			prevPos = prevPos.AddXY(0, row.maxHeight+theme.Padding())
-			continue
-		}
-		prevItemsBounds := prevPos.AddXY(row.items[0].Size().Width+theme.Padding(), 0)
-
-		splitSize := containerSize.Width / float32(len(row.items)-1)
-		for j, item := range row.items[1 : len(row.items)-1] {
-			if prevItemsBounds.X+theme.Padding() > float32(j+1)*splitSize-(item.Size().Width/2) {
-				item.Move(prevPos.AddXY(
-					prevItemsBounds.X+theme.Padding(),
-					0,
-				))
-				prevItemsBounds.X += item.Size().Width + theme.Padding()
-				continue
-			}
-			item.Move(prevPos.AddXY(
-				float32(j+1)*splitSize-(item.Size().Width/2)+theme.Padding(),
-				0,
-			))
-		}
-
-		row.items[len(row.items)-1].Move(prevPos.AddXY(
-			canvasWidth-row.items[len(row.items)-1].Size().Width+theme.Padding(),
-			0,
-		))
-
 		prevPos.Y += row.maxHeight + theme.Padding()
 	}
 
@@ -165,4 +152,123 @@ func NewResponsibleRowDistributedLayout(maxColumns int, objects ...fyne.CanvasOb
 		actualSize: fyne.NewSize(0, 0),
 	}
 	return container.New(r, objects...)
+}
+
+/*
+rowItemsDistributed distributes items in a row with equal spacing between them
+and the first and last items are aligned with the left and right edges of the row
+*/
+func (row *layoutRow) rowItemsDistributed(initialPos fyne.Position, canvasWidth float32) {
+	if len(row.items) == 0 {
+		return
+	}
+
+	row.items[0].Move(initialPos)
+	if len(row.items) == 1 {
+		return
+	}
+	prevItemXBound := row.items[0].Size().Width + theme.Padding()
+
+	splitSize := canvasWidth / float32(len(row.items)-1)
+	for j, item := range row.items[1 : len(row.items)-1] {
+		if prevItemXBound+theme.Padding() > float32(j+1)*splitSize-(item.Size().Width/2) {
+			item.Move(initialPos.AddXY(
+				prevItemXBound+theme.Padding(),
+				0,
+			))
+			prevItemXBound += item.Size().Width + theme.Padding()
+			continue
+		}
+		item.Move(initialPos.AddXY(
+			float32(j+1)*splitSize-(item.Size().Width/2)+theme.Padding(),
+			0,
+		))
+	}
+
+	row.items[len(row.items)-1].Move(initialPos.AddXY(
+		canvasWidth-row.items[len(row.items)-1].Size().Width,
+		0,
+	))
+}
+
+/*
+rowItemsLeft aligns items in a row with the left edge of the row
+*/
+func (row *layoutRow) rowItemsLeft(initialPos fyne.Position, canvasWidth float32) {
+	if len(row.items) == 0 {
+		return
+	}
+
+	row.items[0].Move(initialPos)
+	if len(row.items) == 1 {
+		return
+	}
+	prevItemXBound := row.items[0].Size().Width + theme.Padding()
+
+	for _, item := range row.items[1:] {
+		item.Move(fyne.NewPos(
+			prevItemXBound,
+			initialPos.Y,
+		))
+		prevItemXBound += item.Size().Width + theme.Padding()
+	}
+
+}
+
+/*
+rowItemsRight aligns items in a row with the right edge of the row
+*/
+func (row *layoutRow) rowItemsRight(initialPos fyne.Position, canvasWidth float32) {
+	if len(row.items) == 0 {
+		return
+	}
+
+	canvasWidth += theme.InnerPadding()
+	prevItemXBound := canvasWidth - row.items[len(row.items)-1].Size().Width - theme.Padding()
+	row.items[len(row.items)-1].Move(fyne.NewPos(
+		prevItemXBound,
+		initialPos.Y,
+	))
+	if len(row.items) == 1 {
+		return
+	}
+
+	var flippedItems = row.items
+	for i, j := 0, len(flippedItems)-1; i < j; i, j = i+1, j-1 {
+		flippedItems[i], flippedItems[j] = flippedItems[j], flippedItems[i]
+	}
+	for _, item := range flippedItems[1:] {
+		prevItemXBound -= item.Size().Width + theme.Padding()
+		item.Move(fyne.NewPos(
+			prevItemXBound,
+			initialPos.Y,
+		))
+	}
+}
+
+/*
+rowItemsCenter aligns items in a row with the center of the row
+*/
+func (row *layoutRow) rowItemsCenter(initialPos fyne.Position, canvasWidth float32) {
+	if len(row.items) == 0 {
+		return
+	}
+
+	prevItemXBound := (canvasWidth / 2) - ((row.width + theme.Padding()*float32(len(row.items))) / 2)
+	row.items[0].Move(fyne.NewPos(
+		prevItemXBound,
+		initialPos.Y,
+	))
+	if len(row.items) == 1 {
+		return
+	}
+	prevItemXBound += row.items[0].Size().Width + theme.Padding()
+
+	for _, item := range row.items[1:] {
+		item.Move(fyne.NewPos(
+			prevItemXBound,
+			initialPos.Y,
+		))
+		prevItemXBound += item.Size().Width + theme.Padding()
+	}
 }
