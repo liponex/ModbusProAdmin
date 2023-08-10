@@ -17,35 +17,12 @@
 package serial
 
 import (
-	"bufio"
 	"fmt"
-	"log"
-
 	"go.bug.st/serial"
+	"log"
+	"modbus-pro-admin/modbus"
+	"time"
 )
-
-type Serial interface {
-	Opener
-	Closer
-	Writer
-	Reader
-}
-
-type Opener interface {
-	Open() (Proto, error)
-}
-
-type Closer interface {
-	Close() error
-}
-
-type Writer interface {
-	Write()
-}
-
-type Reader interface {
-	Read()
-}
 
 type Proto struct {
 	port         serial.Port
@@ -130,14 +107,26 @@ func (proto *Proto) AddListener(listener func(proto *Proto)) {
 }
 
 func (proto *Proto) runListeners() {
-	scanner := bufio.NewScanner(proto.port)
-	scanner.Split(ScanModbus)
+	err := proto.port.SetReadTimeout(20 * time.Second)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	for proto.status != "closed" {
-		if scanner.Scan() {
-			proto.InputBuffer = scanner.Bytes()
-			for _, listener := range proto.listeners {
-				listener(proto)
-			}
+		proto.InputBuffer = make([]byte, 300)
+		n, _ := proto.port.Read(proto.InputBuffer)
+		if n == 0 {
+			continue
+		}
+		mbProto := modbus.MbPacketProto{
+			Buffer: proto.InputBuffer[:n],
+			Crc:    uint16(proto.InputBuffer[n-2])<<8 + uint16(proto.InputBuffer[n-1]),
+		}
+		if !mbProto.Validate() {
+			continue
+		}
+
+		for _, listener := range proto.listeners {
+			listener(proto)
 		}
 	}
 }

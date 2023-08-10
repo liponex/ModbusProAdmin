@@ -35,12 +35,12 @@ func TestModbusPack(t *testing.T) {
 	}
 	proto.Pack()
 	want := []uint8{0x01, 0x03, 0x00, 0x01, 0x00, 0x01}
-	if len(want) != len(proto.PacketBuffer) {
-		t.Fatal("proto.Pack() = ", proto.PacketBuffer, ", want match for ", want)
+	if len(want) != len(proto.Buffer) {
+		t.Fatal("proto.Pack() = ", proto.Buffer, ", want match for ", want)
 	}
-	for i := 0; i < len(proto.PacketBuffer); i++ {
-		if want[i] != proto.PacketBuffer[i] {
-			t.Fatal("proto.Pack() = ", proto.PacketBuffer, ", want match for ", want)
+	for i := 0; i < len(proto.Buffer); i++ {
+		if want[i] != proto.Buffer[i] {
+			t.Fatal("proto.Pack() = ", proto.Buffer, ", want match for ", want)
 		}
 	}
 }
@@ -82,12 +82,12 @@ func TestModbusReadOne(t *testing.T) {
 	proto.CRC16()
 
 	want := []uint8{0x01, 0x03, 0x00, 0x01, 0x00, 0x01, 0xD5, 0xCA}
-	if len(want) != len(proto.PacketBuffer) {
-		t.Fatal("proto.PacketBuffer = ", proto.PacketBuffer, ", want match for ", want)
+	if len(want) != len(proto.Buffer) {
+		t.Fatal("proto.Buffer = ", proto.Buffer, ", want match for ", want)
 	}
-	for i := 0; i < len(proto.PacketBuffer); i++ {
-		if want[i] != proto.PacketBuffer[i] {
-			t.Fatal("proto.PacketBuffer = ", proto.PacketBuffer, ", want match for ", want)
+	for i := 0; i < len(proto.Buffer); i++ {
+		if want[i] != proto.Buffer[i] {
+			t.Fatal("proto.Buffer = ", proto.Buffer, ", want match for ", want)
 		}
 	}
 }
@@ -109,12 +109,12 @@ func TestModbusWriteMany(t *testing.T) {
 	proto.CRC16()
 
 	want := []uint8{0x01, 0x10, 0x00, 0x02, 0x00, 0x03, 0x06, 0x00, 0x0B, 0x00, 0x0C, 0x00, 0x0D, 0xE3, 0x4D}
-	if len(want) != len(proto.PacketBuffer) {
-		t.Fatal("proto.PacketBuffer = ", proto.PacketBuffer, ", want match for ", want)
+	if len(want) != len(proto.Buffer) {
+		t.Fatal("proto.Buffer = ", proto.Buffer, ", want match for ", want)
 	}
-	for i := 0; i < len(proto.PacketBuffer); i++ {
-		if want[i] != proto.PacketBuffer[i] {
-			t.Fatal("proto.PacketBuffer = ", proto.PacketBuffer, ", want match for ", want)
+	for i := 0; i < len(proto.Buffer); i++ {
+		if want[i] != proto.Buffer[i] {
+			t.Fatal("proto.Buffer = ", proto.Buffer, ", want match for ", want)
 		}
 	}
 }

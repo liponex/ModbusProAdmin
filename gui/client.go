@@ -31,13 +31,30 @@ var (
 )
 
 func client() *container.TabItem {
+	handler := container.NewVBox()
 
-	clientTabContainer.Add(xLayout.NewResponsibleRowDistributedLayout(
-		3,
-		newSerialSelector(),
-		widget.NewLabel("123"),
-		widget.NewLabel("456"),
+	handler.Add(NewSerialSelector())
+	handler.Add(xLayout.NewResponsibleRowDistributedLayout(
+		8,
+		widget.NewLabel("0000"),
+		widget.NewLabel("0001"),
+		widget.NewLabel("0010"),
+		widget.NewLabel("0011"),
+		widget.NewLabel("0100"),
+		widget.NewLabel("0101"),
+		widget.NewLabel("0110"),
+		widget.NewLabel("0111"),
+		widget.NewLabel("1000"),
+		widget.NewLabel("1001"),
+		widget.NewLabel("1010"),
+		widget.NewLabel("1011"),
+		widget.NewLabel("1100"),
+		widget.NewLabel("1101"),
+		widget.NewLabel("1110"),
+		widget.NewLabel("1111"),
 	))
+
+	clientTabContainer.Add(handler)
 
 	return clientTabItem
 }
